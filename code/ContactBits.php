@@ -2,45 +2,41 @@
 
 class ContactBits  extends DataExtension {
 
-	public static $db = array(
-		'Address' => 'Text',
-		'Postal' => 'Text',
+	private static $db = array(
 		'Phone' => 'Varchar',
 		'TollFree' => 'Varchar',
 		'Mobile' => 'Varchar',
 		'Fax' => 'Varchar(250)',
-		'Email' => 'Varchar(200)'
+		'Email' => 'Varchar(200)',
+		'Address' => 'Text',
+		'Postal' => 'Text'
 	);
 
 	public function updateCMSFields(FieldList $fields) {
-		$show = self::$show;
-		$before = 'Content';
-		if($this->owner instanceof SiteConfig) $before = 'Theme';
+	
+		$before = $fields->dataFieldByName('Content') ? 'Content' : null;
+		if(!$before || $this->owner instanceof SiteConfig) $before = $fields->dataFieldByName('Theme') ? 'Theme' : null;
 		
-		if($show['Phone']) $fields->addFieldToTab("Root.Main",new TextField('Phone'), $before);
-		if($show['TollFree']) $fields->addFieldToTab("Root.Main",new TextField('TollFree', 'Toll Free'), $before);
-		if($show['Mobile']) $fields->addFieldToTab("Root.Main",new TextField('Mobile'), $before);
-		if($show['Fax']) $fields->addFieldToTab("Root.Main",new TextField('Fax'), $before);
-		if($show['Email']) $fields->addFieldToTab("Root.Main",new EmailField('Email'), $before);
-		if($show['Postal']) $fields->addFieldToTab("Root.Main",new TextareaField('Postal'), $before);
-		if($show['Address']) $fields->addFieldToTab("Root.Main",new TextareaField('Address'), $before);
+		$show = array_diff(array_keys(self::$db), (array)Config::inst()->get(__CLASS__, 'hide')); //self::$db seems really bad, but how else to do?
+		
+		foreach($show as $field) {
+			$title = null;
+			switch($field) {
+				case 'Email':
+					$type = 'EmailField';
+					break;
+				case 'Address':
+				case 'Postal':
+					$type = 'TextareaField';
+					break;
+				case 'TollFree':
+					$title = 'Toll Free';
+				default: $type = 'TextField';
+			}
+			$fields->addFieldToTab('Root.Main', $type::create($field, $title), $before);
+		}
 		
 		return $fields;
-	}
-	
-	private static $show = array(
-		'Address' => true,
-		'Postal' => true,
-		'Phone' => true,
-		'TollFree' => true,
-		'Mobile' => true,
-		'Fax' => true,
-		'Email' => true
-	);
-	
-	public static function hide($fields) {
-		foreach($fields as $field)
-			self::$show[$field] = false;
 	}
 	
 }
